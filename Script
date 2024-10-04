@@ -1,0 +1,219 @@
+local Players = game:GetService("Players") -- Getting the Players service
+local DataStoreService = game:GetService("DataStoreService") -- Getting the Datastore service
+local TweenService = game:GetService("TweenService") -- Getting the TweenService
+
+local Database = DataStoreService:GetDataStore("Database") -- Adding Datastore
+
+local Level_Table = { -- Table of ranks
+	[1] = {
+		["Tag"] = "Beginner";
+		["Need_Level"] = 0;
+	};
+	[2] = {
+		["Tag"] = "Experienced";
+		["Need_Level"] = 360;
+	};
+	[3] = {
+		["Tag"] = "Decent";
+		["Need_Level"] = 720;
+	};
+	[4] = {
+		["Tag"] = "Warrior";
+		["Need_Level"] = 1080;
+	};
+	[5] = {
+		["Tag"] = "Godlike";
+		["Need_Level"] = 1440;
+	};
+	[6] = {
+		["Tag"] = "Demigod";
+		["Need_Level"] = 1800;
+	};
+	[7] = {
+		["Tag"] = "God";
+		["Need_Level"] = 2160;
+	};
+}
+
+local function Gui(Player : Player) -- Adding ScreenGui in PlayerGui
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Parent = Player.PlayerGui
+	ScreenGui.Name = "MainGui"
+	ScreenGui.IgnoreGuiInset = false
+end
+
+local function GuiLevel(Player : Player, NewLevel : string) -- Adding a notification to the player's screen when the level increases
+	if Player and Player.Character then
+		local ScreenGui = Player.PlayerGui:WaitForChild("MainGui")
+
+		local Frame = Instance.new("Frame") -- Main Frame
+		Frame.Parent = ScreenGui
+		Frame.Name = "Level"
+		Frame.AnchorPoint = Vector2.new(0.5, 0)
+		Frame.Position = UDim2.new(0.5, 0, -1, 0)
+		Frame.Size = UDim2.new(0.5, 0, 0.1, 0)
+		Frame.BackgroundTransparency = 0.2
+		
+		local UiCorner = Instance.new("UICorner") -- Smooth Corner for main frame
+		UiCorner.Parent = Frame
+		UiCorner.Name = "UICorner"
+		
+		local colorSequence = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 1, 200)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 0, 255))
+		}
+		
+		local UiGradient = Instance.new("UIGradient") -- Gradient for main frame
+		UiGradient.Parent = Frame
+		UiGradient.Name = "UIGradient"
+		UiGradient.Color = colorSequence
+		
+		local UiStroke = Instance.new("UIStroke")
+		UiStroke.Parent = Frame
+		UiStroke.Name = "UIStroke"
+		UiStroke.Color = Color3.new(1, 1, 1)
+		
+		local colorSequence2 = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(111, 200, 178)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(206, 255, 70))
+		}
+		
+		local UiGradient2 = Instance.new("UIGradient") -- Gradient for UIStroke 
+		UiGradient2.Parent = UiStroke
+		UiGradient2.Name = "UIGradient"
+		UiGradient2.Color = colorSequence2
+		
+		local Text = Instance.new("TextLabel") -- Text Label 
+		Text.Parent = Frame
+		Text.Size = UDim2.new(1, 0, 1, 0)
+		Text.TextColor = BrickColor.new(Color3.new(1, 1, 1))
+		Text.Text = "New Level: " .. NewLevel .. " !!!"
+		Text.TextScaled = true
+		Text.BackgroundTransparency = 1 
+		Text.Font = Enum.Font.FredokaOne
+		Text.TextStrokeTransparency = 0
+		
+		local NewSound = Instance.new("Sound") -- Adding Sound
+		NewSound.Parent = Frame
+		NewSound.Name = "Sound"
+		NewSound.SoundId = "rbxassetid://6079105785"
+		
+		-- Smooth appearance notifications
+		local TweenInfoNew = TweenInfo.new(1.5, Enum.EasingStyle.Quad)
+
+		local Tween1 = TweenService:Create(Frame, TweenInfoNew, {Position = UDim2.new(0.5, 0, 0.1, 0)})
+		Tween1:Play()
+		spawn(function()
+			task.wait(Tween1.TweenInfo.Time/2)
+			NewSound:Play()
+		end)
+		Tween1.Completed:Wait()
+		task.wait(4)
+		local Tween2 = TweenService:Create(Frame, TweenInfoNew, {Position = UDim2.new(0.5, 0, -1, 0)})
+		Tween2:Play()
+		Tween2.Completed:Wait()
+		Frame:Destroy()
+		-- End
+	end
+end
+
+local function SetRank(Player : Player) -- Function for set rank
+	local Leaderstats = Player:FindFirstChild("leaderstats")
+	
+	local LastLevel = 0
+	
+	for i, info in pairs(Level_Table) do
+		if Leaderstats.Level.Value >= info.Need_Level then
+			Leaderstats.Rank.Value = info.Tag
+		end
+	end
+end
+
+local function SetLevel(Player : Player)  -- Function for set level
+	local Leaderstats = Player:FindFirstChild("leaderstats")
+	
+	for i, value in pairs(Leaderstats:GetChildren()) do
+		if value.Name == "Level" then
+			value.Value = Leaderstats.Time.Value / 10
+		end
+	end
+	SetRank(Player)
+end
+
+Players.PlayerAdded:Connect(function(Player)
+	local user_id = "User_" .. Player.UserId
+	
+	local Leaderstats = Instance.new("Folder") -- Adding leaderstats
+	Leaderstats.Parent = Player
+	Leaderstats.Name = "leaderstats"
+	
+	local Time = Instance.new("IntValue") -- Adding Time Value
+	Time.Parent = Leaderstats
+	Time.Name = "Time"
+	Time.Value = 0
+	
+	local Level = Instance.new("IntValue") -- Adding Level Value
+	Level.Parent = Leaderstats
+	Level.Name = "Level"
+	Level.Value = 1
+	
+	local Rank = Instance.new("StringValue") -- Adding Rank Value
+	Rank.Parent = Leaderstats
+	Rank.Name = "Rank"
+	Rank.Value = "Beginner"
+	
+	local Success, PlayerData = pcall(function() -- Getting player data
+		return Database:GetAsync(user_id)
+	end)
+	
+	print("Get:", PlayerData)
+	
+	if PlayerData then
+		for i, value in pairs(Leaderstats:GetChildren()) do  -- set values
+			value.Value = PlayerData[value.Name]
+		end
+	else
+		print("Error")
+	end
+	
+	task.wait()
+	
+	Player.CharacterAdded:Connect(function(Character)
+		
+		Time.Changed:Connect(function()
+			SetLevel(Player)
+		end)
+		
+		Level.Changed:Connect(function()
+			GuiLevel(Player, Level.Value)
+		end)
+		
+		Gui(Player)
+		
+		while Character do
+			task.wait(1)
+			Time.Value += 1 -- Update time value
+		end
+	end)
+end)
+
+Players.PlayerRemoving:Connect(function(Player) -- Saving data function
+	
+	local user_id = "User_" .. Player.UserId
+	
+	local Success, PlayerData = pcall(function()
+		return Database:UpdateAsync(user_id, function()
+			local save_table = {}
+
+			for i, value in pairs(Player.leaderstats:GetChildren()) do
+				save_table[value.Name] = value.Value
+			end
+
+			print("Table for saving:", save_table)
+
+			return save_table
+		end)
+	end)
+end)
